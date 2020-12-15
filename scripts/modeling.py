@@ -9,7 +9,7 @@ import melidatachall19
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Execute modeling scenario")
-    parser.add_argument('-p', '--profile', dest='profile', default="profile.yml",
+    parser.add_argument('-p', '--profile', dest='profile', default="profiles/profile_default.yml",
                         help='Profile file for execution')
     args = parser.parse_args()
 
