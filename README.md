@@ -4,7 +4,7 @@
 
 ## Description
 
-This repository is intended to provide a Python library ready to fit and evaluate Machine Learning models to classify categories on data of text searches extracted from the MercadoLibre platform. 
+This repository is intended to provide a Python library ready to fit and evaluate Machine Learning models to classify categories of items on data of text titles extracted from the MercadoLibre platform. 
 In particular, the models are based on Keras neural networks, and the data used was extracted from the MercadoLibre Challenge 2019 (available [on Kaggle](https://www.kaggle.com/abugim/meli-data-challenge-2019)).
 
 The goal of this development was to provide not only a Machine Learning solution with good enough results for this challenge, but also a productive solution that is ready to evolve along the time in production scenarios.
@@ -20,7 +20,8 @@ For more details about the work done, check the [document with notes](./docs/not
       │   ├── evaluate           <- Module to provide logic for the model evaluation
       │   ├── kb                 <- Module to place all knowledge base of the project, like constants and rules   
       │   ├── model              <- Module to fit the classifier model      
-      │   └── preprocess         <- Module to preprocess text input data      
+      │   ├── preprocess         <- Module to preprocess text input data      
+      │   └── utils              <- Module to provide utils in general       
       │                
       ├── data                   <- Folder for datasets to be used locally  
       │
@@ -46,7 +47,21 @@ You can install this library through the following commands:
 $ ./tools/install.sh
 # Activate the environment
 $ source tools/environment.sh
+```        
+
+## Tests
+
+Tests are developed using [pytest](https://docs.pytest.org/en/stable/>) and its plugins. To run all tests in ``tests/``, execute:
 ```
+# Run unit tests
+$ ./tools/tests.sh unit
+# Run system tests
+$ ./tools/tests.sh system
+# Run all the tests
+$ ./tools/tests.sh all
+``` 
+
+More details in the [tests's README.md](./tests/README.md)
 
 ## Tools
 
@@ -62,4 +77,4 @@ This is the list of tools used to develop in this project.
 
 ## License
 
-This repository is released under the [MIT License](LICENSE). The data used 
+This repository is released under the [MIT License](LICENSE). 
