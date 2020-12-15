@@ -77,6 +77,7 @@ class PreProcessStep(Step):
 
         # - Read raw dataset from CSV file
         df = pd.read_csv(self.path_to_data)
+        self.logger.info(f"Dataset loaded has shape: {df.shape}")
 
         if self.nrows > 0:
             # To work with a random smaller sample (e.g. for quicker testing)
@@ -123,6 +124,7 @@ class PreProcessStep(Step):
         # NOTE: saved in Parquet format for lower space
         # NOTE: test sets separated to evaluate performance per model
         #       (overall performance also computed)
+        self.logger.info("Saving resulting datasets...")
         df_train_es.reset_index(drop=True).to_parquet(self.profile["paths"]["train"]["es"])
         df_test_es.reset_index(drop=True).to_parquet(self.profile["paths"]["test"]["es"])
         df_train_pt.reset_index(drop=True).to_parquet(self.profile["paths"]["train"]["pt"])
