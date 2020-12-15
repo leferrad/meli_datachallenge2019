@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from keras import Input, Model, initializers, optimizers, layers
+from tensorflow.keras import initializers, layers, optimizers
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 
@@ -53,23 +53,61 @@ class ModelingStep(Step):
         self.valid_size = profile["model"]["valid_size"]
         self.seed = profile["seed"]
         np.random.seed(self.seed)
-        # TODO: fix seed everywhere!
+        tf.random.set_seed(self.seed)
 
         # Create logger for execution
         self.logger = get_logger(__name__+f"_lang={language}", level=profile["logger"]["level"])
         self.logger.debug("ModelingStep initialized")
 
+    def _build_network(self):
+        """Function to build a custom network for the model"""
+        # Learn embedding from input tokens
+        embedding_layer = layers.Embedding(
+            self.num_tokens,
+            self.embedding_dim,
+            embeddings_initializer=initializers.glorot_normal(),
+            trainable=True,
+        )
+        self.model = tf.keras.models.Sequential()
+        self.model.add(tf.keras.Input(shape=(None,), dtype="int64"))
+        self.model.add(layers.Embedding(
+            self.num_tokens,
+            self.embedding_dim,
+            embeddings_initializer=initializers.glorot_normal(),
+            trainable=True))
+        self.model.add(layers.BatchNormalization())
+        self.model.add(layers.Conv1D(128, 3, activation="relu"))
+        self.model.add(layers.GlobalMaxPooling1D())
+        self.model.add(layers.Dense(128, activation="relu"))
+        self.model.add(layers.Dropout(0.2))
+        self.model.add(layers.Dense(self.n_labels, activation="softmax"))
+
+        # NOTE: ensure both loss and metrics are sparse
+        # See: https://github.com/tensorflow/tensorflow/issues/42045#issuecomment-674232499
+        self.model.compile(
+            loss="sparse_categorical_crossentropy",
+            optimizer=optimizers.Adam(lr=1e-3),
+            metrics=["sparse_categorical_accuracy"]
+        )
+
+    def load(self):
         # Read data to initialize text vectorization
-        df_train = pd.read_parquet(profile["paths"]["train"][language])
+        df_train = pd.read_parquet(self.profile["paths"]["train"][self.language])
+
+        self.logger.info(f"Dataset loaded has shape: {df_train.shape}")
 
         # Split data into train / valid datasets, stratified by category
         df_train, df_valid = train_test_split(df_train, test_size=self.valid_size,
                                               stratify=df_train[kb.LABEL_COLUMN],
                                               random_state=self.seed)
 
+        self.logger.info(f"Dataset for TRAIN has shape: {df_train.shape}")
+        self.logger.info(f"Dataset for VALID has shape: {df_valid.shape}")
+
         # Get number of labels to predict from train labels
         y_train = to_categorical(df_train[kb.LABEL_COLUMN])
-        self.n_labels = len(y_train)
+        self.n_labels = y_train.shape[1]
+        self.logger.info(f"Dataset has {self.n_labels} labels to predict")
 
         # Create text vectorizer
         self.vectorizer = TextVectorization(max_tokens=self.max_tokens,
@@ -90,33 +128,6 @@ class ModelingStep(Step):
         self.y_train = np.array(df_train[kb.LABEL_COLUMN])
         self.x_val = self.vectorizer(np.array([[s] for s in df_valid[kb.TITLE_COLUMN]])).numpy()
         self.y_val = np.array(df_valid[kb.LABEL_COLUMN])
-
-    def _build_network(self):
-        """Function to build a custom network for the model"""
-        # Learn embedding from input tokens
-        embedding_layer = layers.Embedding(
-            self.num_tokens,
-            self.embedding_dim,
-            embeddings_initializer=initializers.glorot_normal(),
-            trainable=True,
-        )
-
-        int_sequences_input = Input(shape=(None,), dtype="int64")
-        x = embedding_layer(int_sequences_input)
-        x = layers.BatchNormalization()(x)
-        x = layers.Conv1D(128, 3, activation="relu")(x)
-        x = layers.GlobalMaxPooling1D()(x)
-        x = layers.Dense(128, activation="relu")(x)
-        x = layers.Dropout(0.2)(x)
-        y = layers.Dense(self.n_labels, activation="softmax")(x)
-        self.model = Model(int_sequences_input, y)
-
-        self.model.compile(
-            loss="sparse_categorical_crossentropy",
-            optimizer=optimizers.Adam(lr=1e-3),
-            metrics=["accuracy",
-                     tf.keras.metrics.CategoricalAccuracy()]
-        )
 
     def train(self):
         """Train model with already loaded data"""
@@ -143,6 +154,7 @@ class ModelingStep(Step):
 
     def run(self):
         """Entry point to run step"""
+        self.load()
         self.train()
         self.save()
         self.flush()
