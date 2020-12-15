@@ -56,7 +56,7 @@ class ModelingStep(Step):
         # TODO: fix seed everywhere!
 
         # Create logger for execution
-        self.logger = get_logger(__name__, level=profile["logger"]["level"])
+        self.logger = get_logger(__name__+f"_lang={language}", level=profile["logger"]["level"])
         self.logger.debug("ModelingStep initialized")
 
         # Read data to initialize text vectorization
