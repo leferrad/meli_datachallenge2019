@@ -12,7 +12,7 @@ METRICS = {
 }
 
 
-def evaluate_metrics(x, y, model, vectorizer, label_encoder):
+def evaluate_metrics(x, y, model, vectorizer, label_encoder=None):
     """
     Function to evaluate a model (with a preprocessing done with vectorizer + label encoder),
     in terms of some pre-defined metrics that compare
@@ -26,19 +26,21 @@ def evaluate_metrics(x, y, model, vectorizer, label_encoder):
         y array of target to predict
     model : {tf.keras.Model}
         model to be evaluated
-    vectorizer : {tf.TextVectorization}
-        vectorizer to convert text into integer tokens in x
-    label_encoder : {sklearn.preprocessing.LabelEncoder}
-        to convert labels in range [0, N-1]
+    vectorizer : {tf.TextVectorization or None}
+        vectorizer to convert text into integer tokens in x (optional)
+    label_encoder : {sklearn.preprocessing.LabelEncoder or None}
+        to convert labels in range [0, N-1] (optional)
 
     Returns
     -------
     dict, with entries per metric evaluated
     """
-    # Transform text in 'x' into int tokens
-    x = vectorizer(np.array([[r] for r in x])).numpy()
-    # Convert labels in range [0, N-1]
-    y = label_encoder.transform(y)
+    if vectorizer is not None:
+        # Transform text in 'x' into int tokens
+        x = vectorizer(np.array([[r] for r in x])).numpy()
+    if label_encoder is not None:
+        # Convert labels in range [0, N-1]
+        y = label_encoder.transform(y)
     # Get predictions (OHE)
     y_p = model.predict(x)
     # From OHE to best class
