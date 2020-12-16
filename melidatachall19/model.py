@@ -2,6 +2,7 @@
 # See https://keras.io/examples/nlp/pretrained_word_embeddings/
 
 import gc
+import json
 import pickle
 import time
 
@@ -14,6 +15,7 @@ from tensorflow.keras import initializers, layers, optimizers
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 
 from melidatachall19.base import Step
+from melidatachall19.metrics import evaluate_metrics
 from melidatachall19.utils import get_logger
 from melidatachall19 import kb
 
@@ -76,12 +78,23 @@ class ModelingStep(Step):
         self.model.add(layers.Dropout(0.2))
         self.model.add(layers.Dense(self.n_labels, activation="softmax"))
 
+        # Define callbacks for model optimization
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                          min_delta=0,
+                                                          patience=0,
+                                                          verbose=0,
+                                                          mode='auto',
+                                                          baseline=None,
+                                                          restore_best_weights=False)
+        history = tf.keras.callbacks.History()
+        self.callbacks = [early_stopping, history]
+
         # NOTE: ensure both loss and metrics are sparse
         # See: https://github.com/tensorflow/tensorflow/issues/42045#issuecomment-674232499
         self.model.compile(
             loss="sparse_categorical_crossentropy",
             optimizer=optimizers.Adam(lr=1e-3),
-            metrics=["sparse_categorical_accuracy"]
+            metrics=["sparse_categorical_accuracy"],
         )
 
     def load(self):
@@ -134,6 +147,8 @@ class ModelingStep(Step):
         self.x_val = self.vectorizer(np.array([[s] for s in x_val])).numpy()
         self.y_val = y_val
 
+        self.results = dict()
+
     def train(self):
         """Train model with already loaded data"""
         t = time.time()
@@ -141,13 +156,30 @@ class ModelingStep(Step):
         self.logger.info("Model summary:")
         self.model.summary()
         self.logger.info("Start training model...")
-        self.model.fit(self.x_train, self.y_train,
-                       validation_data=(self.x_val, self.y_val),
-                       validation_batch_size=self.batch_size,
-                       batch_size=self.batch_size,
-                       epochs=self.n_epochs)
+        self.history = self.model.fit(self.x_train, self.y_train,
+                                      validation_data=(self.x_val, self.y_val),
+                                      validation_batch_size=self.batch_size,
+                                      callbacks=self.callbacks,
+                                      batch_size=self.batch_size,
+                                      epochs=self.n_epochs)
 
         self.logger.info("Execution took %.3f seconds", time.time() - t)
+
+    def evaluate(self):
+        """Evaluate results of train + valid of obtained model"""
+        self.results = dict()
+        for k, x, y in [("train", self.x_train, self.y_train),
+                        ("valid", self.x_val, self.y_val)]:
+            self.logger.info(f"Computing metrics for dataset '{k}'")
+            res = evaluate_metrics(x=x, y=y,
+                                   model=self.model,
+                                   # x arrays already tokenized
+                                   vectorizer=None,
+                                   # y vectors already encoded
+                                   label_encoder=None)
+            self.logger.info(f"Results for model : ")
+            self.logger.info(res)
+            self.results[k] = res
 
     def flush(self):
         """Remove from memory heavy objects that are not longer needed after run()"""
@@ -156,18 +188,22 @@ class ModelingStep(Step):
         del self.y_train
         del self.x_val
         del self.y_val
+        del self.model
+        del self.vectorizer
+        del self.label_encoder
         gc.collect()
 
     def run(self):
         """Entry point to run step"""
         self.load()
         self.train()
+        self.evaluate()
         self.save()
         self.flush()
 
     def save(self):
-        """Save both model + vectorizer + label encoder for later usage"""
-        self.logger.info("Saving model + vectorizer")
+        """Save all relevant artifacts for later usage and analysis"""
+        self.logger.info("Saving modeling artifacts")
         self.model.save(self.profile["paths"]["model"][self.language])
         # From https://stackoverflow.com/a/65225240/5484690
         with open(self.profile["paths"]["vectorizer"][self.language], "wb") as f:
@@ -175,3 +211,10 @@ class ModelingStep(Step):
                          'weights': self.vectorizer.get_weights()}, f)
         with open(self.profile["paths"]["label_encoder"][self.language], "wb") as f:
             pickle.dump(self.label_encoder, f)
+
+        for k, res in self.results.items():
+            with open(self.profile["paths"]["results"][k][self.language], "w") as f:
+                json.dump(res, f)
+
+        with open(self.profile["paths"]["results"]["fit_history"][self.language], "w") as f:
+            json.dump(self.history.history, f)
