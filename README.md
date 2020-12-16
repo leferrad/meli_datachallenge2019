@@ -8,7 +8,7 @@
 ## Description
 
 This repository is intended to provide a Python library ready to fit and evaluate Machine Learning models to classify categories of items on data of text titles extracted from the MercadoLibre platform. 
-In particular, the models are based on Keras neural networks, and the data used was extracted from the MercadoLibre Challenge 2019 (available [on Kaggle](https://www.kaggle.com/abugim/meli-data-challenge-2019)).
+In particular, the models are based on Tensorflow + Keras neural networks, and the data used was extracted from the MercadoLibre Challenge 2019 (available [on Kaggle](https://www.kaggle.com/abugim/meli-data-challenge-2019)).
 
 The goal of this development was to provide not only a Machine Learning solution with good enough results for this challenge, but also a productive solution that is ready to evolve along the time in production scenarios.
 
