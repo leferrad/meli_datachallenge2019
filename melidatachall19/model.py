@@ -8,9 +8,9 @@ import time
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
 from tensorflow.keras import initializers, layers, optimizers
-from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 
 from melidatachall19.base import Step
@@ -61,15 +61,9 @@ class ModelingStep(Step):
 
     def _build_network(self):
         """Function to build a custom network for the model"""
-        # Learn embedding from input tokens
-        embedding_layer = layers.Embedding(
-            self.num_tokens,
-            self.embedding_dim,
-            embeddings_initializer=initializers.glorot_normal(),
-            trainable=True,
-        )
         self.model = tf.keras.models.Sequential()
         self.model.add(tf.keras.Input(shape=(None,), dtype="int64"))
+        # Learn embedding from input tokens
         self.model.add(layers.Embedding(
             self.num_tokens,
             self.embedding_dim,
@@ -99,14 +93,20 @@ class ModelingStep(Step):
         # Split data into train / valid datasets, stratified by category
         df_train, df_valid = train_test_split(df_train, test_size=self.valid_size,
                                               stratify=df_train[kb.LABEL_COLUMN],
+                                              shuffle=True,
                                               random_state=self.seed)
 
         self.logger.info(f"Dataset for TRAIN has shape: {df_train.shape}")
         self.logger.info(f"Dataset for VALID has shape: {df_valid.shape}")
 
+        # Get arrays from DF
+        x_train = df_train[kb.TITLE_COLUMN]
+        y_train = df_train[kb.LABEL_COLUMN]
+        x_val = df_valid[kb.TITLE_COLUMN]
+        y_val = df_valid[kb.LABEL_COLUMN]
+
         # Get number of labels to predict from train labels
-        y_train = to_categorical(df_train[kb.LABEL_COLUMN])
-        self.n_labels = y_train.shape[1]
+        self.n_labels = len(y_train.unique())
         self.logger.info(f"Dataset has {self.n_labels} labels to predict")
 
         # Create text vectorizer
@@ -123,11 +123,16 @@ class ModelingStep(Step):
         # Create model based on configured network
         self._build_network()
 
+        # Transform labels into integer in range [0, N-1]
+        self.label_encoder = LabelEncoder()
+        y_train = self.label_encoder.fit_transform(y_train)
+        y_val = self.label_encoder.transform(y_val)
+
         # Get arrays of data for train and valid
-        self.x_train = self.vectorizer(np.array([[s] for s in df_train[kb.TITLE_COLUMN]])).numpy()
-        self.y_train = np.array(df_train[kb.LABEL_COLUMN])
-        self.x_val = self.vectorizer(np.array([[s] for s in df_valid[kb.TITLE_COLUMN]])).numpy()
-        self.y_val = np.array(df_valid[kb.LABEL_COLUMN])
+        self.x_train = self.vectorizer(np.array([[s] for s in x_train])).numpy()
+        self.y_train = y_train
+        self.x_val = self.vectorizer(np.array([[s] for s in x_val])).numpy()
+        self.y_val = y_val
 
     def train(self):
         """Train model with already loaded data"""
@@ -139,7 +144,8 @@ class ModelingStep(Step):
         self.model.fit(self.x_train, self.y_train,
                        validation_data=(self.x_val, self.y_val),
                        validation_batch_size=self.batch_size,
-                       batch_size=self.batch_size, epochs=self.n_epochs)
+                       batch_size=self.batch_size,
+                       epochs=self.n_epochs)
 
         self.logger.info("Execution took %.3f seconds", time.time() - t)
 
@@ -160,11 +166,12 @@ class ModelingStep(Step):
         self.flush()
 
     def save(self):
-        """Save both model + vectorizer for later usage"""
+        """Save both model + vectorizer + label encoder for later usage"""
         self.logger.info("Saving model + vectorizer")
         self.model.save(self.profile["paths"]["model"][self.language])
         # From https://stackoverflow.com/a/65225240/5484690
         with open(self.profile["paths"]["vectorizer"][self.language], "wb") as f:
-            # pickle.dump(self.vectorizer, f)
             pickle.dump({'config': self.vectorizer.get_config(),
                          'weights': self.vectorizer.get_weights()}, f)
+        with open(self.profile["paths"]["label_encoder"][self.language], "wb") as f:
+            pickle.dump(self.label_encoder, f)
