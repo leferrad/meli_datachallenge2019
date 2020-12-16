@@ -22,6 +22,7 @@ For more details about the work done, check the [document with notes](./docs/not
       │   ├── base               <- Module to provide base abstractions for the development                           
       │   ├── evaluate           <- Module to provide logic for the model evaluation
       │   ├── kb                 <- Module to place all knowledge base of the project, like constants and rules   
+      │   ├── metrics            <- Module to handle metrics for model evaluation   
       │   ├── model              <- Module to fit the classifier model      
       │   ├── preprocess         <- Module to preprocess text input data      
       │   └── utils              <- Module to provide utils in general       
