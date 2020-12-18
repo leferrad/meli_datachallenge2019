@@ -72,8 +72,8 @@ class ModelingStep(Step):
             embeddings_initializer=initializers.glorot_normal(),
             trainable=True))
         self.model.add(layers.SpatialDropout1D(0.2))
-        self.model.add(layers.LSTM(128, return_sequences=True))
-        self.model.add(layers.Conv1D(64, 5, activation="elu",
+        self.model.add(layers.LSTM(128, activation="tanh", return_sequences=True))
+        self.model.add(layers.Conv1D(64, 5, activation="tanh",
                                      strides=3,
                                      kernel_regularizer=regularizers.l2(0.01)))
         self.model.add(layers.GlobalMaxPooling1D())
@@ -81,9 +81,9 @@ class ModelingStep(Step):
         self.model.add(layers.Dense(64, activation="elu"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
-        self.model.add(layers.Dense(128, activation="elu"))
+        self.model.add(layers.Dense(256, activation="elu"))
         self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.2))
+        self.model.add(layers.Dropout(0.5))
         self.model.add(layers.Dense(self.n_labels, activation="softmax"))
 
         # Define callbacks for model optimization
@@ -92,8 +92,10 @@ class ModelingStep(Step):
                                                           patience=0,
                                                           verbose=0,
                                                           mode='auto')
+        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                                         patience=0, min_lr=1e-4)
         history = tf.keras.callbacks.History()
-        self.callbacks = [early_stopping, history]
+        self.callbacks = [early_stopping, reduce_lr, history]
 
         # NOTE: ensure both loss and metrics are sparse
         # See: https://github.com/tensorflow/tensorflow/issues/42045#issuecomment-674232499
@@ -223,5 +225,5 @@ class ModelingStep(Step):
             with open(self.profile["paths"]["results"][k][self.language], "w") as f:
                 json.dump(res, f)
 
-        with open(self.profile["paths"]["results"]["fit_history"][self.language], "w") as f:
-            json.dump(self.history.history, f)
+        # with open(self.profile["paths"]["results"]["fit_history"][self.language], "w") as f:
+        #     json.dump(self.history.history, f)
