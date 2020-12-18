@@ -11,7 +11,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
-from tensorflow.keras import initializers, layers, optimizers
+from tensorflow.keras import initializers, layers, optimizers, regularizers
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 
 from melidatachall19.base import Step
@@ -58,7 +58,7 @@ class ModelingStep(Step):
         tf.random.set_seed(self.seed)
 
         # Create logger for execution
-        self.logger = get_logger(__name__+f"_lang={language}", level=profile["logger"]["level"])
+        self.logger = get_logger(__name__ + f"_lang={language}", level=profile["logger"]["level"])
         self.logger.debug("ModelingStep initialized")
 
     def _build_network(self):
@@ -71,10 +71,18 @@ class ModelingStep(Step):
             self.embedding_dim,
             embeddings_initializer=initializers.glorot_normal(),
             trainable=True))
-        self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Conv1D(128, 3, activation="relu"))
+        self.model.add(layers.SpatialDropout1D(0.2))
+        self.model.add(layers.LSTM(128, return_sequences=True))
+        self.model.add(layers.Conv1D(64, 5, activation="elu",
+                                     strides=3,
+                                     kernel_regularizer=regularizers.l2(0.01)))
         self.model.add(layers.GlobalMaxPooling1D())
-        self.model.add(layers.Dense(128, activation="relu"))
+        self.model.add(layers.Dropout(0.2))
+        self.model.add(layers.Dense(64, activation="elu"))
+        self.model.add(layers.BatchNormalization())
+        self.model.add(layers.Dropout(0.2))
+        self.model.add(layers.Dense(128, activation="elu"))
+        self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.2))
         self.model.add(layers.Dense(self.n_labels, activation="softmax"))
 
@@ -83,9 +91,7 @@ class ModelingStep(Step):
                                                           min_delta=0,
                                                           patience=0,
                                                           verbose=0,
-                                                          mode='auto',
-                                                          baseline=None,
-                                                          restore_best_weights=False)
+                                                          mode='auto')
         history = tf.keras.callbacks.History()
         self.callbacks = [early_stopping, history]
 
@@ -98,6 +104,7 @@ class ModelingStep(Step):
         )
 
     def load(self):
+        """Load resources before the modeling"""
         # Read data to initialize text vectorization
         df_train = pd.read_parquet(self.profile["paths"]["train"][self.language])
 
@@ -177,7 +184,7 @@ class ModelingStep(Step):
                                    vectorizer=None,
                                    # y vectors already encoded
                                    label_encoder=None)
-            self.logger.info(f"Results for model : ")
+            self.logger.info("Results for model : ")
             self.logger.info(res)
             self.results[k] = res
 
