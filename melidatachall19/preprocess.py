@@ -1,7 +1,10 @@
 """Module to preprocess text input data"""
 
+import gc
+import re
 import time
 
+from nltk.corpus import stopwords
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -9,6 +12,8 @@ from sklearn.preprocessing import LabelEncoder
 from melidatachall19.base import Step
 from melidatachall19.utils import get_logger
 from melidatachall19 import kb
+
+pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class PreProcessStep(Step):
@@ -57,17 +62,35 @@ class PreProcessStep(Step):
 
         return df_train, df_test
 
-    def _process_title(self, df):
+    def _process_title(self, df, language="spanish"):
+        """Function to clean and prepare the text column 'title'"""
         # To lower
-        df[kb.TITLE_COLUMN] = df[kb.TITLE_COLUMN].str.lower()
+        title = df[kb.TITLE_COLUMN].str.lower()
 
-        # TODO list:
-        # - Regex to remove special chars
-        # - Remove stop words
+        # Regex to clean text
+        special_chars = re.escape(',`\'"|#=_![](){}<>^\\+/*?%.~:@;')
+        special_chars = re.compile(r'[%s]' % special_chars)
+        multiple_whitespaces = re.compile(r'\s\s+')
+        words_with_dashes = re.compile(r' -(?=[^\W\d_])')
+        numbers = re.compile(r'\d')
+
+        # Apply regex on text column
+        title = title.str.replace(words_with_dashes, ' - ')
+        title = title.str.replace(special_chars, ' ')
+        title = title.str.replace(numbers, '0')
+        title = title.str.replace(multiple_whitespaces, ' ')
+
+        # Remove stopwords based on language
+        title = title.apply(lambda line: " ".join([x for x in line.split(" ")
+                                                   if x not in stopwords.words(language)]))
+
+        # TODO: blacklist of words per language
+        # TODO: trim text to max of words
 
         # Not needed steps
         # - Remove nans (not seen)
-        # - Trim text (max words seen are 120)
+
+        df[kb.TITLE_COLUMN] = title
 
         return df
 
@@ -88,14 +111,15 @@ class PreProcessStep(Step):
         # NOTE: done in all the data before splitting datasets for easy usage
         df[kb.LABEL_COLUMN] = self.label_encoder.fit_transform(df[kb.CATEGORY_COLUMN])
 
-        # - Process "title" column
-        df = self._process_title(df)
-
         # - Separate ES / PT data
         # NOTE: this separation is done under the assumption of having
         #       one model per language.
         df_es = df[df[kb.LANGUAGE_COLUMN] == kb.LANGUAGE_ES]
         df_pt = df[df[kb.LANGUAGE_COLUMN] == kb.LANGUAGE_PT]
+
+        # - Process "title" column
+        df_es = self._process_title(df_es, language="spanish")
+        df_pt = self._process_title(df_pt, language="portuguese")
 
         # - Remove classes with very low support
         # NOTE: do this per language, to have it at model level
@@ -132,6 +156,13 @@ class PreProcessStep(Step):
 
         self.logger.info("Execution took %.3f seconds", time.time() - t)
 
+    def flush(self):
+        """Remove from memory heavy objects that are not longer needed after run()"""
+        self.logger.info("Flushing objects")
+        del self.label_encoder
+        gc.collect()
+
     def run(self):
         """Entry point to run step"""
         self.preprocess()
+        self.flush()
