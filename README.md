@@ -61,9 +61,9 @@ These are the main scripts to run the main scenarios for this project:
 
 ```bash
 # To execute modeling scenario to fit models from input data, run the following script:
-python scripts/modeling.py -p profiles/profile_default.yml
+./tools/script.sh scripts/modeling.py -p profiles/profile_default.yml
 # To execute evaluation scenario to evaluate models with test data, run the following script:
-python scripts/evaluation.py -p profiles/profile_default.yml
+./tools/script.sh scripts/evaluation.py -p profiles/profile_default.yml
 ```             
 
 Notice that for the execution, you need to use a `profile` which is a configuration file in YAML format that defines all the settings to use during the execution, like:
