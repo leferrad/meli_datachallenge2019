@@ -7,3 +7,4 @@ flake8==3.8.4
 pydocstyle==5.1.1
 pytest==6.2.0
 pyarrow==2.0.0
+nltk==3.5
