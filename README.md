@@ -14,6 +14,17 @@ The goal of this development was to provide not only a Machine Learning solution
 
 For more details about the work done, check the [document with notes](./docs/notes.md).
 
+## Summary 
+
+- Environment handled with virtualenv
+- Code style checks with Flake8     
+- Github Actions for CI
+- Preprocessing with pandas and scikit-learn
+- Text cleaning with regex and nltk words
+- Machine Learning with Keras and Tensorflow
+- Testing with pytest + pytest-bdd
+- Jupyter notebooks for analysis
+                     
 ## Project structure
                             
       ├── README.md              <- The top-level README for developers using this project
