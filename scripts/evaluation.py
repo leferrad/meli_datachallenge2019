@@ -1,6 +1,7 @@
 """Script to run evaluation scenario to evaluate the model with test data"""
 
 import argparse
+import os
 import time
 
 from melidatachall19.utils import load_profile, get_logger
@@ -12,12 +13,15 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--profile', dest='profile',
                         default="../profiles/profile_sampled_data.yml",
                         help='Profile file for execution')
+    parser.add_argument('-r', '--root', dest='root',
+                        default=".",
+                        help='Root path of execution')
     args = parser.parse_args()
 
     t = time.time()
 
     # Load execution profile to be used
-    profile = load_profile(args.profile)
+    profile = load_profile(args.profile, root_path=os.path.abspath(args.root))
 
     # Create logger for execution
     logger = get_logger(__name__, level=profile["logger"]["level"])
