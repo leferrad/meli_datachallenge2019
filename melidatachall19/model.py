@@ -72,15 +72,17 @@ class ModelingStep(Step):
             embeddings_initializer=initializers.glorot_normal(),
             trainable=True))
         self.model.add(layers.SpatialDropout1D(0.2))
-        self.model.add(layers.LSTM(128, activation="tanh", return_sequences=True))
+        self.model.add(layers.Bidirectional(layers.LSTM(self.embedding_dim,
+                                                        activation="tanh",
+                                                        return_sequences=True)))
         self.model.add(layers.Conv1D(64, 5, activation="tanh",
                                      strides=3,
                                      kernel_regularizer=regularizers.l2(0.01)))
         self.model.add(layers.GlobalMaxPooling1D())
         self.model.add(layers.Dropout(0.2))
-        self.model.add(layers.Dense(64, activation="elu"))
-        self.model.add(layers.BatchNormalization())
-        self.model.add(layers.Dropout(0.2))
+        # self.model.add(layers.Dense(64, activation="elu"))
+        # self.model.add(layers.BatchNormalization())
+        # self.model.add(layers.Dropout(0.2))
         self.model.add(layers.Dense(256, activation="elu"))
         self.model.add(layers.BatchNormalization())
         self.model.add(layers.Dropout(0.5))
