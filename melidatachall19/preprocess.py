@@ -5,9 +5,11 @@ import re
 import time
 
 from nltk.corpus import stopwords
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import unidecode
 
 from melidatachall19.base import Step
 from melidatachall19.utils import get_logger
@@ -54,6 +56,14 @@ class PreProcessStep(Step):
         self.logger = get_logger(__name__, level=profile["logger"]["level"])
         self.logger.debug("PreProcessStep initialized")
 
+        # Blacklist of words per language
+        self.blacklist_words = {
+            "spanish": ["original", "nuevo", "oferta", "modelo", "caja", "kit", "pack", "negro",
+                        "blanco", "cuota", "combo", "nueva", "color", "set", "x", "cp", "cm"],
+            "portuguese": ["original", "novo", "promocao", "kit", "caixa", "modelo", "peca",
+                           "preto", "branco", "unidade", "frete", "grati"],
+        }
+
     def _split(self, df):
         """Split data into train / test datasets, stratified by category"""
         df_train, df_test = train_test_split(df, test_size=self.test_size,
@@ -81,11 +91,14 @@ class PreProcessStep(Step):
         title = title.str.replace(multiple_whitespaces, ' ')
 
         # Remove stopwords based on language
-        title = title.apply(lambda line: " ".join([x for x in line.split(" ")
-                                                   if x not in stopwords.words(language)]))
+        # Also, apply unidecode to remove accents
+        title = title.apply(lambda line: " ".join([unidecode.unidecode(x) for x in line.split(" ")
+                                                   if x not in stopwords.words(language)
+                                                   and x not in self.blacklist_words[language]]))
 
-        # TODO: blacklist of words per language
-        # TODO: trim text to max of words
+        # Trim text to a max range based on 90th percentile
+        max_len = int(np.quantile(title.apply(len), 0.9))
+        title = title.str.slice(0, max_len)
 
         # Not needed steps
         # - Remove nans (not seen)
@@ -117,10 +130,6 @@ class PreProcessStep(Step):
         df_es = df[df[kb.LANGUAGE_COLUMN] == kb.LANGUAGE_ES]
         df_pt = df[df[kb.LANGUAGE_COLUMN] == kb.LANGUAGE_PT]
 
-        # - Process "title" column
-        df_es = self._process_title(df_es, language="spanish")
-        df_pt = self._process_title(df_pt, language="portuguese")
-
         # - Remove classes with very low support
         # NOTE: do this per language, to have it at model level
         label_count = df_es[kb.LABEL_COLUMN].value_counts()
@@ -130,6 +139,10 @@ class PreProcessStep(Step):
         label_count = df_pt[kb.LABEL_COLUMN].value_counts()
         label_count = label_count[label_count >= self.min_count_category]
         df_pt = df_pt[df_pt[kb.LABEL_COLUMN].isin(label_count.index)]
+        
+        # - Process "title" column
+        df_es = self._process_title(df_es, language="spanish")
+        df_pt = self._process_title(df_pt, language="portuguese")
 
         # - Drop not needed columns
         df_es.drop([kb.LABEL_QUALITY_COLUMN,
