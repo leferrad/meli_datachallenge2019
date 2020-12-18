@@ -1,0 +1,52 @@
+# All paths relative to project path
+paths:
+  data: "data"
+  raw: "data/train.csv"
+  train:
+    es: "data/train_es.parquet"
+    pt: "data/train_pt.parquet"
+  test:
+    es: "data/test_es.parquet"
+    pt: "data/test_pt.parquet"
+  model:
+    es: "models/model_es.h5"
+    pt: "models/model_pt.h5"
+  vectorizer:
+    es: "models/vectorizer_es.pkl"
+    pt: "models/vectorizer_pt.pkl"
+  label_encoder:
+    es: "clabel_encoder_es.pkl"
+    pt: "models/label_encoder_pt.pkl"
+  results:
+    train:
+      es: "models/results/train_es.json"
+      pt: "models/results/train_pt.json"
+    valid:
+      es: "models/results/valid_es.json"
+      pt: "models/results/valid_pt.json"
+    test:
+      es: "models/results/test_es.json"
+      pt: "models/results/test_pt.json"
+    fit_history:
+      es: "models/results/fit_history_es.json"
+      pt: "models/results/fit_history_pt.json"
+
+preprocess:
+  nrows: -1    # -1 to indicate all rows
+  test_size: 0.3
+  min_count_category: 20
+
+# TODO: model_es vs model_pt
+
+model:
+  valid_size: 0.3
+  n_epochs: 3
+  batch_size: 128
+  max_tokens: 40_000
+  max_len_seq: 120
+  embedding_dim: 256
+
+logger:
+  level: "INFO"
+
+seed: 123
