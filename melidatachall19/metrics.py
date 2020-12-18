@@ -7,7 +7,9 @@ from sklearn import metrics
 # Based on a multi-class classification problem
 METRICS = {
     "accuracy": lambda y_t, y_p: metrics.accuracy_score(y_t, y_p),
-    "balanced_accuracy": lambda y_t, y_p: metrics.balanced_accuracy_score(y_t, y_p),
+    "balanced_accuracy": lambda y_t, y_p: metrics.balanced_accuracy_score(y_t, y_p, adjusted=True),
+    "precision_micro": lambda y_t, y_p: metrics.precision_score(y_t, y_p, average="micro"),
+    "recall_micro": lambda y_t, y_p: metrics.recall_score(y_t, y_p, average="micro"),
     "f1_micro": lambda y_t, y_p: metrics.f1_score(y_t, y_p, average="micro"),
 }
 
