@@ -9,6 +9,7 @@ As a design decision, these are some statements about the scope of the work done
 
 - **Using neural networks as Machine Learning approach:** Since the main source of information to use is text, this is an NLP problem to solve and it is well known that the state-of-art algorithms in this problematic are neural networks. Therefore, despite the lack of experience in the recent techniques, this was the path to take for the solution. 
 - **No pretrained solutions:** Due to the lack of time to validate improvements, as well as the "challenge" of doing a solution from scratch, no pretrained models will be used for this approach.
+- **Only using title information:** The models will predict categories only based on the text in title and not in the label quality (due to the lack of information and confidence of this attribute).
 
 As mentioned in the project's README, the main goal of this work was to do a productive solution, with good enough results but probably not ready to compete in a leaderboard of a competence (due to the lack of time and experience on NLP projects).
             
@@ -23,7 +24,7 @@ In order to prepare the data for the modeling, these are the steps defined:
 - Split datasets per language (spanish and portuguese)
     - Train / Test split as cross validation strategy
     - During modeling, Train is split into Train / Valid
-    - IMPORTANT: split must be stratified per categories, to ensure the same balance of classes on each dataset.  
+    - IMPORTANT: split must be stratified per categories, to ensure a similar balance of classes on each dataset.  
 - Clean text:
     - Lower case
     - Remove accents through unidecode
@@ -36,7 +37,7 @@ In order to prepare the data for the modeling, these are the steps defined:
     - Trim text to a max range based on 90th percentile
 
 **Next steps**
-- Optimize operations to make preprocessing faster
+- **Optimize operations to make preprocessing faster**
 - Refine blacklists of words to remove
 - Refine ways to remove "garbage" from tex
 - Handle encoding of text (some issues already identified)
@@ -56,9 +57,7 @@ Once the text was prepared, these are the steps followed to do the modeling:
 - Metrics implemented:
     - **Accuracy**: The ratio of classes correctly predicted, as a quick reference of the performance of the model.
     - **Balanced accuracy**: Since there is some imbalance of the categories to predict (some classes have very few records), it is convenient to correct the accuracy to take into account the balance of the classes by averaging the recall per class over all the classes.       
-    - **Precision**: This metric allows to understand how good the categories are predicted in terms of having low false positives. A micro averaging is used to deal with imbalance of classes.
-    - **Recall**: Metric used to understand how exhaustive the models are in terms of predicting all the available instances of classes. Computed a micro average to deal with imbalance of classes.
-    - **F1-Score**: Obtained as a summary of the Precision and Recall computed (micro avg) through the harmonic mean.      
+    - **F1-Score**: Obtained as a summary of the Precision (how low false positives obtained) and Recall (how exhaustive is the model predicting) computed through the harmonic mean. A micro averaging is used to deal with imbalance of classes.     
       
 - Some considerations   
     - Initialization is important (e.g. from uniform to glorot results improved)  
