@@ -32,11 +32,9 @@ paths:
       pt: "models/results/fit_history_pt.json"
 
 preprocess:
-  nrows: 100_000    # -1 to indicate all rows
+  nrows: 1_000_000    # -1 to indicate all rows
   test_size: 0.3
   min_count_category: 20
-
-# TODO: model_es vs model_pt
 
 model:
   valid_size: 0.3

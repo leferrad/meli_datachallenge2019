@@ -47,6 +47,14 @@ coverage.xml
 .hypothesis/
 tests/coverage/
 
+
+# NLTK corpora
+corpora/
+
+# Artifacts obtained
+data/*
+models/*
+
 # Translations
 *.mo
 *.pot

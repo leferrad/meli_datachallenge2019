@@ -23,7 +23,7 @@ For more details about the work done, check the [document with notes](./docs/not
 - Text cleaning with regex and nltk words
 - Machine Learning with Keras and Tensorflow
 - Testing with pytest + pytest-bdd
-- Jupyter notebooks for analysis
+- Jupyter notebooks + Seaborn for analysis
                      
 ## Project structure
                             

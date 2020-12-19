@@ -8,3 +8,8 @@ pydocstyle==5.1.1
 pytest==6.2.0
 pyarrow==2.0.0
 nltk==3.5
+unidecode==1.1.1
+seaborn==0.11.0
+jupyter==1.0.0
+ipykernel==5.4.2
+wordcloud==1.8.1

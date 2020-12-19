@@ -36,14 +36,12 @@ preprocess:
   test_size: 0.3
   min_count_category: 20
 
-# TODO: model_es vs model_pt
-
 model:
   valid_size: 0.3
-  n_epochs: 3
-  batch_size: 128
+  n_epochs: 10
+  batch_size: 256
   max_tokens: 40_000
-  max_len_seq: 120
+  max_len_seq: 90
   embedding_dim: 256
 
 logger:
