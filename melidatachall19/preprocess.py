@@ -4,7 +4,13 @@ import gc
 import re
 import time
 
-from nltk.corpus import stopwords
+try:
+    from nltk.corpus import stopwords
+except ImportError:
+    import nltk
+    nltk.download("stopwords")
+    from nltk.corpus import stopwords
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -92,9 +98,9 @@ class PreProcessStep(Step):
 
         # Remove stopwords based on language
         # Also, apply unidecode to remove accents
-        title = title.apply(lambda line: " ".join([unidecode.unidecode(x) for x in line.split(" ")
-                                                   if x not in stopwords.words(language)
-                                                   and x not in self.blacklist_words[language]]))
+        title = title.apply(lambda line: " ".join(
+            [unidecode.unidecode(x) for x in line.split(" ")
+             if x not in stopwords.words(language) and x not in self.blacklist_words[language]]))
 
         # Trim text to a max range based on 90th percentile
         max_len = int(np.quantile(title.apply(len), 0.9))
@@ -139,7 +145,7 @@ class PreProcessStep(Step):
         label_count = df_pt[kb.LABEL_COLUMN].value_counts()
         label_count = label_count[label_count >= self.min_count_category]
         df_pt = df_pt[df_pt[kb.LABEL_COLUMN].isin(label_count.index)]
-        
+
         # - Process "title" column
         df_es = self._process_title(df_es, language="spanish")
         df_pt = self._process_title(df_pt, language="portuguese")
