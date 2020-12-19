@@ -47,6 +47,10 @@ coverage.xml
 .hypothesis/
 tests/coverage/
 
+
+# NLTK corpora
+corpora/
+
 # Translations
 *.mo
 *.pot
