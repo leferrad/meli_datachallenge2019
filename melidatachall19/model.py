@@ -227,5 +227,7 @@ class ModelingStep(Step):
             with open(self.profile["paths"]["results"][k][self.language], "w") as f:
                 json.dump(res, f)
 
-        # with open(self.profile["paths"]["results"]["fit_history"][self.language], "w") as f:
-        #     json.dump(self.history.history, f)
+        with open(self.profile["paths"]["results"]["fit_history"][self.language], "w") as f:
+            # Ensure all values are float to be JSON serializable
+            history = {k: [float(v) for v in l] for k, l in self.history.history.items()}
+            json.dump(history, f)
