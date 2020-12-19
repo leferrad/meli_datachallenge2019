@@ -53,7 +53,7 @@ Once the text was prepared, these are the steps followed to do the modeling:
     - Embeddings as first layer to learn from tokens in contextual way
     - Once the embeddings are processed, a recurrent layer helps to ...
     - Then, the sequences are processed in terms of 1D convolutions to ...
-    - Loss used: sparse (see [this](https://stackoverflow.com/questions/58565394/what-is-the-difference-between-sparse-categorical-crossentropy-and-categorical-c))
+    - Loss used: Sparse Categorical Cross Entropy, to avoid handling large matrices due to the large number of classes (see [this](https://stackoverflow.com/questions/58565394/what-is-the-difference-between-sparse-categorical-crossentropy-and-categorical-c))
 - Metrics implemented:
     - **Accuracy**: The ratio of classes correctly predicted, as a quick reference of the performance of the model.
     - **Balanced accuracy**: Since there is some imbalance of the categories to predict (some classes have very few records), it is convenient to correct the accuracy to take into account the balance of the classes by averaging the recall per class over all the classes.       
@@ -68,8 +68,8 @@ Once the text was prepared, these are the steps followed to do the modeling:
         - Dropout + SpatialDropout to force robustness of network
         - Activation function "elu" in last Dense layers to avoid vanishing gradient 
     - Callbacks to stop learning when overfitting occurs
-    - Transformers technique was tried, with not good results:
-        - Examples of tokenizations:
+    - [Transformers](https://huggingface.co/transformers/) technique was tried, with not good results:
+        - Tokenizations obtained are not good:
             - Aireador -> aire-ador
             - Mosquitero -> mos-qui-tero
 
